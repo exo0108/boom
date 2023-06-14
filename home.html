@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>對對碰遊戲</title>
+    <style>
+      body {
+        width: 100%;
+        height: 100%;
+
+        background-color: rgb(255, 255, 255);
+     
+      }
+      #wrap{
+
+      }
+      .board {
+          display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            max-width: 480px;
+            margin: 1% auto;
+            justify-items: center;
+      }
+
+      .card {
+        background-color: #a14444;
+            border: 3px solid #616161;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            perspective: 1000px;
+            transition: transform 0.3s;
+      }
+
+      .card.flipped {
+        transform: rotateY(180deg);
+        background-color: #ccc;
+      }
+
+      .card img {
+        width: 100%;
+        display: none;
+      }
+
+      .card.flipped img {
+        display: block;
+      }
+
+      button {
+        border: #ccc 1px solid;
+        margin: 5px;
+        padding: 10px 20px;
+        font-size: 20px;
+        font-family:Arial, Helvetica, sans-serif;
+        color: #464646;
+        font-weight: 900;
+      }
+      button:nth-child(1){
+        background-color: #d3e2a8;
+
+      }
+      button:nth-child(2){
+        background-color: #ecde63;
+
+      }
+      button:nth-child(3){
+        background-color: #e9a975;
+
+      }
+
+      .button-W {
+        display: flex;
+        justify-content: center;
+        
+      }
+      #timer{
+        display: flex;
+        justify-content: center;
+        font-size: 40px;
+        margin: 5px 0;
+        color: #e01313;
+
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <div class="button-W">
+        <button onclick="restartGame(6)">簡單</button>
+        <button onclick="restartGame(8)">中等</button>
+        <button onclick="restartGame(12)">困難</button>
+      </div>
+      <div id="timer">00:00</div>
+
+      <div class="board"></div>
+
+
+    </div>
+
+    <script>
+      let images = [];
+      let flippedCards = [];
+      let matchedCards = [];
+      let startTime;
+      let timerInterval;
+
+      function createCard(image) {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.addEventListener('click', flipCard);
+
+          const img = document.createElement('img');
+          img.src = image;
+          card.appendChild(img);
+
+          return card;
+      }
+
+      function shuffle(array) {
+          let currentIndex = array.length;
+          let temporaryValue, randomIndex;
+
+          while (currentIndex !== 0) {
+              randomIndex = Math.floor(Math.random() * currentIndex);
+              currentIndex -= 1;
+              temporaryValue = array[currentIndex];
+              array[currentIndex] = array[randomIndex];
+              array[randomIndex] = temporaryValue;
+          }
+
+          return array;
+      }
+
+      function flipCard() {
+          if (flippedCards.length < 2 && !flippedCards.includes(this) && !matchedCards.includes(this)) {
+              this.classList.add('flipped');
+              flippedCards.push(this);
+
+              if (flippedCards.length === 2) {
+                  setTimeout(checkForMatch, 500);
+              }
+          }
+      }
+
+      function checkForMatch() {
+          const [card1, card2] = flippedCards;
+          const image1 = card1.querySelector('img').src;
+          const image2 = card2.querySelector('img').src;
+
+          if (image1 === image2) {
+              matchedCards.push(card1, card2);
+              flippedCards = [];
+
+              if (matchedCards.length === images.length) {
+                  clearInterval(timerInterval);
+                  setTimeout(showWinMessage, 500);
+              }
+          } else {
+              flipBackCards(card1, card2);
+          }
+      }
+
+      function flipBackCards(card1, card2) {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+          flippedCards = [];
+      }
+
+      function showWinMessage() {
+          alert('恭喜你完成遊戲！');
+      }
+
+      function restartGame(cardCount) {
+          const board = document.querySelector('.board');
+          board.innerHTML = '';
+          flippedCards = [];
+          matchedCards = [];
+
+          images = generateImages(cardCount);
+          initializeGame();
+      }
+
+      function resetGame() {
+          clearInterval(timerInterval);
+          const cards = document.querySelectorAll('.card');
+          cards.forEach((card) => {
+              card.classList.remove('flipped');
+          });
+          flippedCards = [];
+          matchedCards = [];
+          startTimer();
+      }
+
+      function generateImages(cardCount) {
+          const allImages = [
+              'image1.jpg',
+              'image2.jpg',
+              'image3.jpg',
+              'image4.jpg',
+              'image5.jpg',
+              'image6.jpg',
+              'image7.jpg',
+              'image8.jpg'
+          ];
+
+          const selectedImages = allImages.slice(0, cardCount / 2);
+          const images = selectedImages.concat(selectedImages);
+          return shuffle(images);
+      }
+
+      function initializeGame() {
+          const shuffledImages = shuffle(images);
+          const board = document.querySelector('.board');
+
+          shuffledImages.forEach((image) => {
+              const card = createCard(image);
+              board.appendChild(card);
+          });
+
+          startTimer();
+      }
+
+      function startTimer() {
+          clearInterval(timerInterval);
+          startTime = new Date().getTime();
+
+          timerInterval = setInterval(() => {
+              const currentTime = new Date().getTime();
+              const gameTime = Math.floor((currentTime - startTime) / 1000);
+              const timerElement = document.getElementById('timer');
+              timerElement.textContent = formatTime(gameTime);
+          }, 1000);
+      }
+
+      function formatTime(seconds) {
+          const minutes = Math.floor(seconds / 60);
+          const formattedMinutes = String(minutes).padStart(2, '0');
+          const remainingSeconds = seconds % 60;
+          const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+          return formattedMinutes + ':' + formattedSeconds;
+      }
+  </script>
+  </body>
+</html>
